@@ -1,16 +1,24 @@
+import argparse
 import datetime
-import os
-import torch
-import logging
-
-import graphgps  # noqa, register custom modules
-from graphgps.agg_runs import agg_runs
-from graphgps.optimizer.extra_optimizers import ExtendedSchedulerConfig
-
 from torch_geometric.graphgym.cmd_args import parse_args
 from torch_geometric.graphgym.config import (cfg, dump_cfg,
                                              set_cfg, load_cfg,
                                              makedirs_rm_exist)
+
+import os
+import torch
+import logging
+
+# cfg = 'configs/GPS/zinc-GPS+RWSE.yaml'
+# cfg = CN()
+# # args = parse_args()
+#     # Load config file
+# set_cfg(cfg)
+# load_cfg(cfg, args)
+# import graphgps  # noqa, register custom modules
+from graphgps.agg_runs import agg_runs
+from graphgps.optimizer.extra_optimizers import ExtendedSchedulerConfig
+
 from torch_geometric.graphgym.loader import create_loader
 from torch_geometric.graphgym.logger import set_printing
 from torch_geometric.graphgym.optim import create_optimizer, \
@@ -113,6 +121,21 @@ def run_loop_settings():
     return run_ids, seeds, split_indices
 
 
+def parse_args() -> argparse.Namespace:
+    r"""Parses the command line arguments."""
+    parser = argparse.ArgumentParser(description='GraphGym')
+
+    parser.add_argument('--cfg', dest='cfg_file', type=str, required=False, default='configs/GPS/zinc-GPS+RWSE.yaml',
+                        help='The configuration file path.')
+    parser.add_argument('--repeat', type=int, default=1,
+                        help='The number of repeated jobs.')
+    parser.add_argument('--mark_done', action='store_true',
+                        help='Mark yaml as done after a job has finished.')
+    parser.add_argument('opts', default=None, nargs=argparse.REMAINDER,
+                        help='See graphgym/config.py for remaining options.')
+
+    return parser.parse_args()
+
 if __name__ == '__main__':
     # Load cmd line args
     args = parse_args()
@@ -123,6 +146,7 @@ if __name__ == '__main__':
     dump_cfg(cfg)
     # Set Pytorch environment
     torch.set_num_threads(cfg.num_threads)
+    cfg.wandb.use = False  # QIn
     # Repeat for multiple experiment runs
     for run_id, seed, split_index in zip(*run_loop_settings()):
         # Set configurations for each run
@@ -131,6 +155,7 @@ if __name__ == '__main__':
         cfg.dataset.split_index = split_index
         cfg.seed = seed
         cfg.run_id = run_id
+
         seed_everything(cfg.seed)
         auto_select_device()
         if cfg.pretrained.dir:

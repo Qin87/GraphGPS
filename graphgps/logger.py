@@ -4,8 +4,9 @@ import time
 import numpy as np
 import torch
 from scipy.stats import stats
+from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error, root_mean_squared_error
 from sklearn.metrics import accuracy_score, precision_score, recall_score, \
-    f1_score, roc_auc_score, mean_absolute_error, mean_squared_error, \
+    f1_score, roc_auc_score, mean_absolute_error, root_mean_squared_error, \
     confusion_matrix
 from sklearn.metrics import r2_score
 from torch_geometric.graphgym import get_current_gpu_usage
@@ -186,6 +187,18 @@ class CustomLogger(Logger):
         del result['F1']
         return result
 
+    # def regression(self):
+    #     true, pred = torch.cat(self._true), torch.cat(self._pred)
+    #     reformat = lambda x: round(float(x), cfg.round)
+    #     return {
+    #         'mae': reformat(mean_absolute_error(true, pred)),
+    #         'r2': reformat(r2_score(true, pred, multioutput='uniform_average')),
+    #         'spearmanr': reformat(eval_spearmanr(true.numpy(),
+    #                                              pred.numpy())['spearmanr']),
+    #         'mse': reformat(mean_squared_error(true, pred)),
+    #         'rmse': reformat(mean_squared_error(true, pred, squared=False)),
+    #     }
+
     def regression(self):
         true, pred = torch.cat(self._true), torch.cat(self._pred)
         reformat = lambda x: round(float(x), cfg.round)
@@ -195,7 +208,7 @@ class CustomLogger(Logger):
             'spearmanr': reformat(eval_spearmanr(true.numpy(),
                                                  pred.numpy())['spearmanr']),
             'mse': reformat(mean_squared_error(true, pred)),
-            'rmse': reformat(mean_squared_error(true, pred, squared=False)),
+            'rmse': reformat(root_mean_squared_error(true, pred)),
         }
 
     def update_stats(self, true, pred, loss, lr, time_used, params,
